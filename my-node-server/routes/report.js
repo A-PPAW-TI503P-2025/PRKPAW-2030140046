@@ -4,3 +4,4 @@ const router = express.Router();
  	const { addUserData, isAdmin } = require('../middleware/permissionMiddleware');
  	router.get('/daily', [addUserData, isAdmin], reportController.getDailyReport);
  	module.exports = router;
+
