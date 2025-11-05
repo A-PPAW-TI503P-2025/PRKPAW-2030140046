@@ -1,14 +1,14 @@
 ## 1. Endpoint update data presensi
-![Tampilkan](Update Data Presensi.png)
+![Tampilkan](1.png)
 
 ## 2. Endpoint update jika format tanggal yang diisi tidak valid
-![Tampilkan](Format Input Salah.png)
+![Tampilkan](2.png)
 
 ## 3. Endpoint delete data
-![Tampilkan](Delete Data.png)
+![Tampilkan](3.png)
 
 ## 4. Enpoint search berdasarkan nama
-![Tampilkan](Search Nama.png)
+![Tampilkan](4.png)
 
 ## 5. Endpoint search berdasarkan tanggal
-![Tampilkan](Search dr Tanggal.png)
+![Tampilkan](5.png)
