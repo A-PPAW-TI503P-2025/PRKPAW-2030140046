@@ -8,3 +8,6 @@
 ## 3. Dashboard Page
 ![Tampilkan](DASHBOARD.png)
 
+
+# Di folder my-node-server
+npm install jsonwebtoken bcryptjs

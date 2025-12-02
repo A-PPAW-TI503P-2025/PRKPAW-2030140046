@@ -1,67 +1,44 @@
-const { Presensi } = require("../../models");
-const { Op } = require("sequelize");
+// my-node-server/controllers/reportController.js
+
+const { Presensi, User } = require('../models'); // WAJIB: Import kedua model
 
 exports.getDailyReport = async (req, res) => {
-  try {
-    const { nama, tanggalMulai, tanggalSelesai } = req.query;
-    let options = { where: {} };
+    try {
+        // Asumsi middleware JWT sudah berjalan, req.user tersedia
+        const { nama } = req.query; // Ambil query parameter 'nama' untuk pencarian
+        
+        let whereCondition = {};
+        
+        // Logika Pencarian: Jika parameter 'nama' ada
+        if (nama) {
+            // Menggunakan Sequelize.Op.like untuk pencarian yang fleksibel (case-insensitive)
+            whereCondition = {
+                // Mencari di kolom 'nama' pada model 'User' yang direlasikan
+                '$user.nama$': { [require('sequelize').Op.like]: `%${nama}%` }
+            };
+        }
 
-    // Filter 1: Berdasarkan Nama
-    if (nama) {
-      options.where.nama = {
-        [Op.like]: `%${nama}%`,
-      };
-    }
-
-    // Filter 2: Rentang atau Satu Tanggal
-    if (tanggalMulai && tanggalSelesai) {
-      const startDate = new Date(tanggalMulai);
-      const endDate = new Date(tanggalSelesai);
-      endDate.setHours(23, 59, 59, 999);
-
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        return res.status(400).json({
-          message: "Validasi Gagal",
-          error: "Format tanggalMulai atau tanggalSelesai tidak valid.",
+        // Ambil data Presensi beserta data User pemiliknya (JOIN)
+        const records = await Presensi.findAll({
+            where: whereCondition,
+            include: [
+                {
+                    model: User,
+                    as: 'user', // PENTING: Harus sesuai dengan alias di models/presensi.js
+                    attributes: ['nama', 'email', 'role'], // Kolom yang ingin diambil dari User
+                    required: true // Pastikan hanya mengambil presensi yang memiliki user
+                }
+            ],
+            // Order untuk urutan data terbaru di atas
+            order: [['createdAt', 'DESC']] 
         });
-      }
 
-      options.where.checkIn = {
-        [Op.between]: [startDate, endDate],
-      };
-
-    } else if (tanggalMulai && !tanggalSelesai) {
-      // ✅ Filter satu tanggal (tanggalMulai saja)
-      const startDate = new Date(tanggalMulai);
-      const endDate = new Date(tanggalMulai);
-      endDate.setHours(23, 59, 59, 999);
-
-      if (isNaN(startDate.getTime())) {
-        return res.status(400).json({
-          message: "Validasi Gagal",
-          error: "Format tanggalMulai tidak valid.",
+        res.json({
+            message: "Data Laporan Harian",
+            data: records,
         });
-      }
-
-      options.where.checkIn = {
-        [Op.between]: [startDate, endDate],
-      };
+    } catch (error) {
+        console.error("Error Report:", error);
+        res.status(500).json({ message: "Gagal mengambil laporan", error: error.message });
     }
-
-    // ✅ Ambil data dari database
-    const records = await Presensi.findAll(options);
-
-    // ✅ Kirim hasil ke client
-    res.json({
-      reportDate: new Date().toLocaleDateString("id-ID"),
-      total: records.length,
-      data: records,
-    });
-
-  } catch (error) {
-    res.status(500).json({
-      message: "Gagal mengambil laporan",
-      error: error.message,
-    });
-  }
 };

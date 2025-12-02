@@ -1,31 +1,18 @@
-const express = require("express");
+// my-node-server/routes/presensi.js
+
+const express = require('express');
 const router = express.Router();
-const { body, validationResult } = require("express-validator");
-const presensiController = require("../controllers/presensiController");
+// Pastikan path ke controller sudah benar
+const presensiController = require('../controllers/presensiController.js'); 
 
-// ✅ Middleware Validasi Tanggal
-const validateTanggal = [
-  body("checkIn")
-    .optional()
-    .isISO8601()
-    .withMessage("Format checkIn tidak valid. Gunakan format ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)."),
-  body("checkOut")
-    .optional()
-    .isISO8601()
-    .withMessage("Format checkOut tidak valid. Gunakan format ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)."),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        message: "Validasi Gagal",
-        errors: errors.array(),
-      });
-    }
-    next();
-  },
-];
+// Middleware authenticateToken sudah diterapkan di server.js (router.use(authenticateToken)
+// Sekarang router.post dapat langsung memanggil controller
 
-// ✅ Gunakan middleware sebelum controller
-router.put("/:id", validateTanggal, presensiController.updatePresensi);
+router.post('/check-in', presensiController.CheckIn);
+router.post('/check-out', presensiController.CheckOut);
+router.delete('/:id', presensiController.deletePresensi);
+
+// Anda mungkin ingin menambahkan rute untuk laporan user
+// router.get('/user-report', presensiController.getUserReport); 
 
 module.exports = router;
