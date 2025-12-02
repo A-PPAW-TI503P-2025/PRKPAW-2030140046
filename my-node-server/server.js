@@ -38,3 +38,4 @@ app.use("/api/reports", authenticateToken, reportRoutes);
 app.listen(PORT, () => {
     console.log(`Express server running at http://localhost:${PORT}/`);
 });
+
