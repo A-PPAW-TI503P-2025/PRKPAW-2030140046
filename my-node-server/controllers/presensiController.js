@@ -1,45 +1,68 @@
-// my-node-server/controllers/presensiController.js
-// Catatan: Ini adalah versi yang diperbaiki agar server tidak error
+// my-node-server/controllers/presensiController.js (FINAL FIXED CODE)
 
-const { Presensi, User } = require('../models'); // Pastikan models diimpor
-const { format } = require("date-fns-tz");
-const timeZone = "Asia/Jakarta";
+import * as modelsWrapper from "../models/index.js"; 
 
-exports.CheckIn = async (req, res) => {
-    // Ambil userId dari token (req.user)
-    const { id: userId, nama: userName } = req.user; 
-    
-    try {
-        // Implementasi CheckIn (gunakan Presensi.create)
-        // ... Logika validasi dan penyimpanan ke database ...
-        res.status(201).json({ message: `Check-In Success for ${userName}` }); 
-    } catch (error) {
-        res.status(500).json({ message: "Gagal Check-In" });
-    }
+const db = modelsWrapper.default;
+const { Presensi, User, Sequelize } = db; // Ambil Sequelize (huruf besar) dari db
+
+export const CheckIn = async (req, res) => {
+    try {
+        const { id: userId } = req.user; 
+        const { latitude, longitude } = req.body; // Ambil data lokasi
+
+        // ... (Logika validasi)
+
+        const newRecord = await Presensi.create({
+            userId: userId,
+            checkIn: new Date(),
+            latitude: latitude,  // Simpan data lokasi
+            longitude: longitude, // Simpan data lokasi
+        });
+
+        return res.status(201).json({
+            message: `Halo User ID ${userId}, check-in Anda berhasil.`,
+            data: newRecord
+        });
+
+    } catch (error) {
+        console.error("Error CheckIn:", error);
+        return res.status(500).json({ 
+            message: "Gagal melakukan Check-In",
+            error: error.message 
+        });
+    }
 };
 
-exports.CheckOut = async (req, res) => {
-    // Ambil userId dari token (req.user)
-    const { id: userId, nama: userName } = req.user; 
+export const CheckOut = async (req, res) => {
+    try {
+        const { id: userId } = req.user; 
+        
+        const today = new Date().toISOString().split('T')[0];
+        const record = await Presensi.findOne({
+            where: {
+                userId: userId,
+                checkOut: null,
+                checkIn: Sequelize.literal(`DATE(checkIn) = DATE('${today}')`) 
+            }
+        });
 
-    try {
-        // Implementasi CheckOut (gunakan Presensi.findOne dan record.save())
-        // ... Logika validasi dan update database ...
-        res.status(200).json({ message: `Check-Out Success for ${userName}` });
-    } catch (error) {
-        res.status(500).json({ message: "Gagal Check-Out" });
-    }
-};
+        if (!record) {
+            return res.status(404).json({ message: "Anda belum check-in hari ini atau sudah check-out." });
+        }
 
-exports.deletePresensi = async (req, res) => {
-    // Ambil userId dari token untuk otorisasi pemilik
-    const { id: userId } = req.user; 
-    
-    try {
-        // Implementasi Delete (gunakan Presensi.destroy)
-        // ... Logika menghapus dan pengecekan pemilik (record.userId === userId) ...
-        res.status(204).send();
-    } catch (error) {
-        res.status(500).json({ message: "Gagal menghapus presensi" });
-    }
+        record.checkOut = new Date();
+        await record.save();
+
+        return res.json({
+            message: `Halo User ID ${userId}, check-out Anda berhasil.`,
+            data: record
+        });
+
+    } catch (error) {
+        console.error("Error CheckOut:", error);
+        return res.status(500).json({ 
+            message: "Gagal melakukan Check-Out",
+            error: error.message 
+        });
+    }
 };

@@ -1,18 +1,22 @@
-// my-node-server/routes/presensi.js
+// my-node-server/routes/presensi.js (FINAL)
 
-const express = require('express');
+import express from "express";
 const router = express.Router();
-// Pastikan path ke controller sudah benar
-const presensiController = require('../controllers/presensiController.js'); 
 
-// Middleware authenticateToken sudah diterapkan di server.js (router.use(authenticateToken)
-// Sekarang router.post dapat langsung memanggil controller
+import * as presensiControllerWrapper from "../controllers/presensiController.js";
+import * as authMiddlewareWrapper from "../middleware/authMiddleware.js"; 
 
-router.post('/check-in', presensiController.CheckIn);
-router.post('/check-out', presensiController.CheckOut);
-router.delete('/:id', presensiController.deletePresensi);
 
-// Anda mungkin ingin menambahkan rute untuk laporan user
-// router.get('/user-report', presensiController.getUserReport); 
+router.post(
+    "/check-in", 
+    authMiddlewareWrapper.authMiddleware, 
+    presensiControllerWrapper.CheckIn    
+);
 
-module.exports = router;
+router.post(
+    "/check-out", 
+    authMiddlewareWrapper.authMiddleware,
+    presensiControllerWrapper.CheckOut    
+);
+
+export default router;

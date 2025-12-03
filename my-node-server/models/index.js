@@ -1,43 +1,46 @@
-'use strict';
+// my-node-server/models/index.js (FINAL FIXED CODE: Stabilitas Sinkron)
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
+import path from 'path';
+import { createRequire } from 'module'; 
+import Sequelize from 'sequelize';
+
+// --- IMPOR MODEL SECARA LANGSUNG ---
+import UserModel from "./user.js"; 
+import PresensiModel from "./presensi.js"; 
+// --- END STATIC IMPORTS ---
+
+const require = createRequire(import.meta.url); // Definisikan require untuk config JSON
+const configJson = require('../config/config.json'); 
+
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
-const db = {};
+const config = configJson[env]; 
 
+const db = {};
 let sequelize;
+
+// Inisialisasi Sequelize
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+// 1. Daftarkan Model secara Statis ke objek db
+db.User = UserModel(sequelize, Sequelize.DataTypes);
+db.Presensi = PresensiModel(sequelize, Sequelize.DataTypes);
 
+
+// 2. Menjalankan fungsi associate (Relasi)
+// Logika ini harus dijalankan agar relasi terdaftar di Sequelize
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
 
+
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-module.exports = db;
+// 3. Export database object
+export default db;

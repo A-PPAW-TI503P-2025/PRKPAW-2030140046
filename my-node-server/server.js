@@ -1,41 +1,47 @@
-// my-node-server/server.js
+// my-node-server/server.js (FINAL)
 
-const express = require("express");
-const cors = require("cors");
-const app = express();
-const PORT = 3001;
-const morgan = require("morgan"); // Untuk logging
+import 'dotenv/config.js';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
 
-// --- Import Middleware Auth ---
-// Pastikan permissionMiddleware.js sudah diisi kode JWT yang baru
-const { authenticateToken, isAdmin } = require("./middleware/permissionMiddleware");
+// Import Router sebagai Wrapper (Pola stabil untuk CommonJS exports)
+import * as authRoutesWrapper from "./routes/auth.js"; 
+import * as presensiRoutesWrapper from "./routes/presensi.js"; 
+import * as reportRoutesWrapper from "./routes/reports.js"; 
 
-// --- Import Routers ---
-const presensiRoutes = require("./routes/presensi.js"); 
-const reportRoutes = require("./routes/report.js");
-const ruteBuku = require("./routes/books.js");
-const authRoutes = require("./routes/auth.js"); // Router untuk Login/Register
+const app = express(); // HARUS DIDEFINISIKAN SEBELUM DIGUNAKAN
+const PORT = process.env.PORT || 3001; 
 
-// --- Middleware Global ---
-app.use(cors()); 
-app.use(express.json()); // Wajib untuk parsing req.body
-app.use(morgan("dev")); 
+// Global middlewares
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+app.use(morgan("dev"));
 
+// Root
 app.get("/", (req, res) => {
-    res.send("Home Page for API");
+  res.send("Selamat Datang di API Absensi Kampus!");
 });
 
-// --- Route Handlers ---
-app.use("/api/auth", authRoutes); // Rute Auth (Login/Register) TIDAK dilindungi
+// ROUTES
+// Akses router melalui properti .default
+app.use("/api/auth", authRoutesWrapper.default); 
+app.use("/api/presensi", presensiRoutesWrapper.default);
+app.use("/api/reports", reportRoutesWrapper.default); 
 
-// Terapkan JWT Middleware pada rute yang perlu dilindungi:
-// Semua rute ini memerlukan header Authorization: Bearer <token>
-app.use("/api/books", ruteBuku); 
-app.use("/api/presensi", authenticateToken, presensiRoutes); 
-app.use("/api/reports", authenticateToken, reportRoutes); 
-
-// Jalankan server
-app.listen(PORT, () => {
-    console.log(`Express server running at http://localhost:${PORT}/`);
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ message: "Endpoint tidak ditemukan" });
 });
 
+// ERROR Handler
+app.use((err, req, res, next) => {
+  console.error("ERROR:", err.stack);
+  res.status(500).json({ message: "Terjadi kesalahan pada server" });
+});
+
+app.listen(PORT, () =>
+  console.log(`Server berjalan di http://localhost:${PORT}`)
+);

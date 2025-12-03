@@ -1,44 +1,48 @@
-// my-node-server/controllers/reportController.js
+// my-node-server/controllers/reportController.js (FINAL FIXED CODE)
 
-const { Presensi, User } = require('../models'); // WAJIB: Import kedua model
+// Import Wrapper untuk model Sequelize
+import * as modelsWrapper from "../models/index.js"; 
 
-exports.getDailyReport = async (req, res) => {
+// Destructuring Model dan Library dari objek db
+const db = modelsWrapper.default;
+const { Presensi, User, Sequelize } = db; 
+
+// Implementasi getReport
+export const getReport = async (req, res) => {
     try {
-        // Asumsi middleware JWT sudah berjalan, req.user tersedia
-        const { nama } = req.query; // Ambil query parameter 'nama' untuk pencarian
-        
-        let whereCondition = {};
-        
-        // Logika Pencarian: Jika parameter 'nama' ada
-        if (nama) {
-            // Menggunakan Sequelize.Op.like untuk pencarian yang fleksibel (case-insensitive)
-            whereCondition = {
-                // Mencari di kolom 'nama' pada model 'User' yang direlasikan
-                '$user.nama$': { [require('sequelize').Op.like]: `%${nama}%` }
-            };
-        }
-
-        // Ambil data Presensi beserta data User pemiliknya (JOIN)
-        const records = await Presensi.findAll({
-            where: whereCondition,
-            include: [
-                {
-                    model: User,
-                    as: 'user', // PENTING: Harus sesuai dengan alias di models/presensi.js
-                    attributes: ['nama', 'email', 'role'], // Kolom yang ingin diambil dari User
-                    required: true // Pastikan hanya mengambil presensi yang memiliki user
-                }
-            ],
-            // Order untuk urutan data terbaru di atas
-            order: [['createdAt', 'DESC']] 
+        // Ambil semua data presensi, termasuk data user yang bersangkutan
+        const reports = await Presensi.findAll({
+            // Pastikan relasi sudah didefinisikan di models/user.js dan models/presensi.js
+            include: [{
+                model: User,
+                as: 'user', 
+                attributes: ['id', 'nama', 'email'] 
+            }],
+            order: [['checkIn', 'DESC']]
         });
 
-        res.json({
-            message: "Data Laporan Harian",
-            data: records,
+        return res.json({
+            message: "Data laporan presensi berhasil diambil",
+            data: reports
         });
+
     } catch (error) {
-        console.error("Error Report:", error);
-        res.status(500).json({ message: "Gagal mengambil laporan", error: error.message });
+        console.error("Error getReport:", error);
+        return res.status(500).json({ 
+            message: "Gagal mengambil data laporan",
+            error: error.message 
+        });
     }
 };
+
+
+const reports = await Presensi.findAll({
+            include: [{
+                model: User,
+                as: 'user', // <--- HARUS SAMA DENGAN models/presensi.js
+                attributes: ['id', 'nama', 'email'] 
+            }],
+            order: [['checkIn', 'DESC']]
+        });
+
+// Pastikan tidak ada module.exports di sini.

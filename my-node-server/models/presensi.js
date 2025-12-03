@@ -1,33 +1,23 @@
+// my-node-server/models/presensi.js (FINAL FIXED CODE)
+
 'use strict';
-const {
-  Model
-} = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
-  class Presensi extends Model {
-static associate(models) {
-  // Presensi milik satu User
-  Presensi.belongsTo(models.User, {
-    foreignKey: 'userId',
-    as: 'user'
-  });
-}
-  }
-  Presensi.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    checkIn: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    checkOut: {
-      type: DataTypes.DATE,
-      allowNull: true, // Boleh kosong (null) karena saat baru check-in, belum ada jam check-out
-    }
-  }, {
-    sequelize,
-    modelName: 'Presensi',
-  });
+import { DataTypes } from 'sequelize'; 
+
+export default (sequelize, DataTypes) => {
+  const Presensi = sequelize.define('Presensi', {
+    checkIn: { type: DataTypes.DATE, allowNull: false },
+    checkOut: { type: DataTypes.DATE, allowNull: true },
+    latitude: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
+    longitude: { type: DataTypes.DECIMAL(11, 8), allowNull: true },
+  }, {});
+
+  Presensi.associate = function(models) {
+    // Definisi relasi Many-to-One
+    Presensi.belongsTo(models.User, {
+        foreignKey: 'userId',
+        as: 'user' // Relasi kembali ke User
+    });
+  };
+
   return Presensi;
 };
